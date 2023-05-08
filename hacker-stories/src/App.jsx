@@ -1,4 +1,5 @@
 import * as React from 'react';
+import axios from 'axios';
 import './App.css';
 
 const useStorageState = (key, initialState) => {
@@ -12,33 +13,6 @@ const useStorageState = (key, initialState) => {
 
 	return [value, setValue];
 };
-
-// const initialStories = [
-// 	{
-// 		title: 'React',
-// 		url: 'https://reactjs.org/',
-// 		author: 'Jordan Walke',
-// 		num_comments: 3,
-// 		points: 4,
-// 		objectID: 0,
-// 	},
-// 	{
-// 		title: 'Redux',
-// 		url: 'https://redux.js.org/',
-// 		author: 'Dan Abramov, Andrew Clark',
-// 		num_comments: 2,
-// 		points: 5,
-// 		objectID: 1,
-// 	},
-// ];
-
-// const getAsyncStories = () =>
-// 	new Promise((resolve) =>
-// 		setTimeout(
-// 			() => resolve({ data: { stories: initialStories } }),
-// 			2000
-// 		)
-// 	);
 
 const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query=';
 
@@ -94,12 +68,12 @@ const App = () => {
 	const handleFetchStories = React.useCallback(() => {
 		dispatchStories({ type: 'STORIES_FETCH_INIT' });
 
-		fetch(url)
-			.then((response) => response.json())
+		axios
+			.get(url)
 			.then((result) => {
 				dispatchStories({
 					type: 'STORIES_FETCH_SUCCESS',
-					payload: result.hits,
+					payload: result.data.hits,
 				});
 			})
 			.catch(() =>
