@@ -1,6 +1,18 @@
 import * as React from 'react';
 import './App.css';
 
+const useStorageState = (key, initialState) => {
+	const [value, setValue] = React.useState(
+		localStorage.getItem(key) || initialState
+	);
+
+	React.useEffect(() => {
+		localStorage.setItem(key, value);
+	}, [value, key]);
+
+	return [value, setValue];
+};
+
 const App = () => {
 	const stories = [
 		{
@@ -21,7 +33,7 @@ const App = () => {
 		},
 	];
 
-	const [searchTerm, setSearchTerm] = React.useState('React');
+	const [searchTerm, setSearchTerm] = useStorageState('search', 'React');
 
 	const handleSearch = (event) => {
 		setSearchTerm(event.target.value);
@@ -45,10 +57,12 @@ const App = () => {
 };
 
 const Search = ({ search, onSearch }) => (
-	<div>
+	// whenever you don’t want to introduce an intermediary element that’s only there to satisfy React, you can use fragments as helper “elements”.
+	// you can also use <> and </> instead of <React.Fragment> and </React.Fragment>
+	<React.Fragment>
 		<label htmlFor="search">Search: </label>
 		<input id="search" type="text" value={search} onChange={onSearch} />
-	</div>
+	</React.Fragment>
 );
 
 const List = ({ list }) => (
@@ -58,6 +72,7 @@ const List = ({ list }) => (
 		))}
 	</ul>
 );
+
 const Item = ({ item }) => (
 	<li>
 		<span>
