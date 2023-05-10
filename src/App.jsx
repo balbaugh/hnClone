@@ -194,7 +194,8 @@ const InputWithLabel = ({
 	);
 };
 
-const List = ({ list, onRemoveItem }) => (
+// React’s memo API checks whether the props of a component have changed. If not, it does not re- render even though its parent component re-rendered.
+const List = React.memo(({ list, onRemoveItem }) => (
 	<ul>
 		{list.map((item) => (
 			<Item
@@ -204,7 +205,9 @@ const List = ({ list, onRemoveItem }) => (
 			/>
 		))}
 	</ul>
-);
+));
+
+List.displayName = 'List';
 
 const Item = ({ item, onRemoveItem }) => (
 	<li className='item'>
