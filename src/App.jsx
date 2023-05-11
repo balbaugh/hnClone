@@ -19,7 +19,11 @@ const storiesReducer = (state, action) => {
 				...state,
 				isLoading: false,
 				isError: false,
-				data: action.payload,
+				data:
+					action.payload.page === 0
+						? action.payload.list
+						: state.data.concat(action.payload.list),
+				page: action.payload.page,
 			};
 		case 'STORIES_FETCH_FAILURE':
 			return {
@@ -58,7 +62,18 @@ const useStorageState = (key, initialState) => {
 	return [value, setValue];
 };
 
-const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query=';
+const API_BASE = 'https://hn.algolia.com/api/v1';
+const API_SEARCH = '/search';
+const PARAM_SEARCH = 'query=';
+const PARAM_PAGE = 'page=';
+
+const getUrl = (searchTerm, page) =>
+	`${API_BASE}${API_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}`;
+
+const extractSearchTerm = (url) =>
+	url
+		.substring(url.lastIndexOf('?') + 1, url.lastIndexOf('&'))
+		.replace(PARAM_SEARCH, '');
 
 const getSumComments = (stories) => {
 	return stories.data.reduce(
@@ -73,13 +88,11 @@ const App = () => {
 		'React'
 	);
 
-	const [url, setUrl] = React.useState(
-		`${API_ENDPOINT}${searchTerm}`
-	);
+	const [url, setUrl] = React.useState([getUrl(searchTerm, 0)]);
 
 	const [stories, dispatchStories] = React.useReducer(
 		storiesReducer,
-		{ data: [], isLoading: false, isError: false }
+		{ data: [], page: 0, isLoading: false, isError: false }
 	);
 
 	const handleFetchStories = React.useCallback(async () => {
@@ -90,7 +103,10 @@ const App = () => {
 
 			dispatchStories({
 				type: 'STORIES_FETCH_SUCCESS',
-				payload: result.data.hits,
+				payload: {
+					list: result.data.hits,
+					page: result.data.page,
+				},
 			});
 		} catch {
 			dispatchStories({ type: 'STORIES_FETCH_FAILURE' });
@@ -112,10 +128,20 @@ const App = () => {
 		setSearchTerm(event.target.value);
 	};
 
-	const handleSearchSubmit = (event) => {
-		setUrl(`${API_ENDPOINT}${searchTerm}`);
+	const handleSearch = (searchTerm, page) => {
+		const url = getUrl(searchTerm, page);
+		setUrl(url.concat(url));
+	};
 
+	const handleSearchSubmit = (event) => {
+		handleSearch(searchTerm, 0);
 		event.preventDefault();
+	};
+
+	const handleMore = () => {
+		const lastUrl = url[url.length - 1];
+		const searchTerm = extractSearchTerm(lastUrl);
+		handleSearch(searchTerm, stories.page + 1);
 	};
 
 	const sumComments = React.useMemo(
@@ -139,13 +165,21 @@ const App = () => {
 
 			{stories.isError && <p>Something went wrong ...</p>}
 
+			<List
+				list={stories.data}
+				onRemoveItem={handleRemoveStory}
+			/>
+
 			{stories.isLoading ? (
 				<p>Loading ...</p>
 			) : (
-				<List
-					list={stories.data}
-					onRemoveItem={handleRemoveStory}
-				/>
+				<button
+					type='button'
+					onClick={handleMore}
+					className='button buttonLarge'
+				>
+					More
+				</button>
 			)}
 		</div>
 	);
